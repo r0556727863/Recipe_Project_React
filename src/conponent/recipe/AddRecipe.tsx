@@ -4,11 +4,9 @@ import { useContext, useState, useEffect } from "react"
 import ErrorSnackbar from "../Error"
 import {
   Box,
-  TextField,
   Button,
   Select,
   MenuItem,
-  FormControl,
   InputLabel,
   Typography,
   Grid,
@@ -17,16 +15,31 @@ import {
   CircularProgress,
   Card,
   CardContent,
-  Divider,
   InputAdornment,
-  styled,
-  Alert,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
 } from "@mui/material"
 import { UserContext } from "../context/UserContext"
-import DeleteIcon from "@mui/icons-material/Delete"
-import AddIcon from "@mui/icons-material/Add"
 import { recipeStore } from "../store/RecipeStore"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  ArrowLeft,
+  ArrowRight,
+  Clock,
+  Trash2,
+  Plus,
+  Save,
+  X,
+  ImageIcon,
+  FileText,
+  Utensils,
+  ListOrdered,
+  ChefHat,
+  Bookmark,
+} from "lucide-react"
+import { AddRecipeStyles } from "../../styles/add-recipe.styles"
 
 // הגדרת ממשק עבור הנתונים
 interface RecipeForm {
@@ -47,43 +60,6 @@ interface RecipeForm {
   CategoryId: number
 }
 
-// Styled components for better form styling
-const StyledTextField = styled(TextField)(({ theme }) => ({
-  "& .MuiOutlinedInput-root": {
-    "&:hover fieldset": {
-      borderColor: "#D19A9A",
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "#D19A9A",
-    },
-  },
-  "& .MuiInputLabel-root.Mui-focused": {
-    color: "#D19A9A",
-  },
-  "& .MuiInputLabel-root": {
-    background: "white",
-    padding: "0 5px",
-  },
-}))
-
-const StyledFormControl = styled(FormControl)(({ theme }) => ({
-  "& .MuiOutlinedInput-root": {
-    "&:hover fieldset": {
-      borderColor: "#D19A9A",
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "#D19A9A",
-    },
-  },
-  "& .MuiInputLabel-root.Mui-focused": {
-    color: "#D19A9A",
-  },
-  "& .MuiInputLabel-root": {
-    background: "white",
-    padding: "0 5px",
-  },
-}))
-
 const AddRecipe = () => {
   const navigate = useNavigate()
   const [error, setError] = useState<any>(null)
@@ -91,6 +67,7 @@ const AddRecipe = () => {
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<any[]>([])
   const [nameError, setNameError] = useState<string | null>(null)
+  const [activeStep, setActiveStep] = useState(0)
 
   const context = useContext(UserContext)
   if (!context) {
@@ -117,6 +94,7 @@ const AddRecipe = () => {
     formState: { errors },
     setValue,
     watch,
+    trigger,
   } = useForm<RecipeForm>({
     defaultValues: {
       Name: "",
@@ -178,6 +156,23 @@ const AddRecipe = () => {
       setNameError(null)
     }
   }, [watchName, recipeStore.recipes])
+
+  const handleNext = async () => {
+    const fieldsToValidate: any = {
+      0: ["Name", "Description", "CategoryId"],
+      1: ["Duration", "Difficulty", "Img"],
+      2: ["Ingridents"],
+    }
+
+    const result = await trigger(fieldsToValidate[activeStep])
+    if (result) {
+      setActiveStep((prevActiveStep) => prevActiveStep + 1)
+    }
+  }
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1)
+  }
 
   const onSubmit: SubmitHandler<RecipeForm> = async (data) => {
     if (!state.Id) {
@@ -241,128 +236,90 @@ const AddRecipe = () => {
     }
   }
 
-  return (
-    <Box sx={{ py: 4 }}>
-      <Card
-        sx={{
-          maxWidth: 700,
-          mx: "auto",
-          borderRadius: 2,
-          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-          overflow: "visible",
-        }}
-      >
-        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-          <Typography
-            variant="h5"
-            gutterBottom
-            sx={{
-              mb: 3,
-              textAlign: "center",
-              color: "#D19A9A",
-              fontWeight: "bold",
-            }}
-          >
-            הוספת מתכון חדש
-          </Typography>
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
 
-          <Divider sx={{ mb: 3 }} />
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.3,
+      },
+    },
+  }
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <StyledTextField
+  const steps = [
+    {
+      label: "פרטי מתכון בסיסיים",
+      icon: <FileText size={20} />,
+      content: (
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <motion.div variants={itemVariants}>
+                <AddRecipeStyles.StyledTextField
                   label="שם המתכון"
                   fullWidth
                   size="small"
                   {...register("Name", { required: "שם המתכון הוא שדה חובה" })}
                   error={!!errors.Name || !!nameError}
-                  helperText={errors.Name?.message as string}
+                  helperText={(errors.Name?.message as string) || nameError}
                   InputProps={{
                     sx: { direction: "rtl" },
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Bookmark size={18} color="#FF9A9E" />
+                      </InputAdornment>
+                    ),
                   }}
                   InputLabelProps={{
                     sx: { right: 14, left: "auto", transformOrigin: "right top" },
                     shrink: true,
                   }}
                 />
-                {nameError && (
-                  <Alert severity="error" sx={{ mt: 1, fontSize: "0.85rem" }}>
-                    {nameError}
-                  </Alert>
-                )}
-              </Grid>
+              </motion.div>
+            </Grid>
 
-              <Grid item xs={12}>
-                <StyledTextField
-                  label="כתובת תמונה (URL)"
+            <Grid item xs={12}>
+              <motion.div variants={itemVariants}>
+                <AddRecipeStyles.StyledTextField
+                  label="תיאור המתכון"
                   fullWidth
+                  multiline
+                  rows={2}
                   size="small"
-                  {...register("Img")}
-                  placeholder="https://example.com/image.jpg"
+                  {...register("Description", { required: "תיאור המתכון הוא שדה חובה" })}
+                  error={!!errors.Description}
+                  helperText={errors.Description?.message as string}
                   InputProps={{
                     sx: { direction: "rtl" },
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <FileText size={18} color="#FF9A9E" />
+                      </InputAdornment>
+                    ),
                   }}
                   InputLabelProps={{
                     sx: { right: 14, left: "auto", transformOrigin: "right top" },
                     shrink: true,
                   }}
                 />
-              </Grid>
+              </motion.div>
+            </Grid>
 
-              <Grid item xs={12} sm={6}>
-                <StyledTextField
-                  label="זמן הכנה (דקות)"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  {...register("Duration", {
-                    required: "זמן הכנה הוא שדה חובה",
-                    min: { value: 1, message: "זמן הכנה חייב להיות לפחות דקה אחת" },
-                  })}
-                  error={!!errors.Duration}
-                  helperText={errors.Duration?.message as string}
-                  InputProps={{
-                    sx: { direction: "rtl" },
-                    endAdornment: <InputAdornment position="end">דקות</InputAdornment>,
-                  }}
-                  InputLabelProps={{
-                    sx: { right: 14, left: "auto", transformOrigin: "right top" },
-                    shrink: true,
-                  }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <StyledFormControl fullWidth error={!!errors.Difficulty} size="small">
-                  <InputLabel
-                    id="difficulty-label"
-                    sx={{ right: 14, left: "auto", transformOrigin: "right top" }}
-                    shrink
-                  >
-                    רמת קושי
-                  </InputLabel>
-                  <Select
-                    labelId="difficulty-label"
-                    {...register("Difficulty", { required: "רמת קושי היא שדה חובה" })}
-                    label="רמת קושי"
-                    sx={{ direction: "rtl" }}
-                    defaultValue={1}
-                  >
-                    <MenuItem value={1}>קלה</MenuItem>
-                    <MenuItem value={2}>בינונית</MenuItem>
-                    <MenuItem value={3}>קשה</MenuItem>
-                  </Select>
-                  {errors.Difficulty && (
-                    <Typography variant="caption" color="error">
-                      {errors.Difficulty.message as string}
-                    </Typography>
-                  )}
-                </StyledFormControl>
-              </Grid>
-
-              <Grid item xs={12}>
-                <StyledFormControl fullWidth error={!!errors.CategoryId} size="small">
+            <Grid item xs={12}>
+              <motion.div variants={itemVariants}>
+                <AddRecipeStyles.StyledFormControl fullWidth error={!!errors.CategoryId} size="small">
                   <InputLabel id="category-label" sx={{ right: 14, left: "auto", transformOrigin: "right top" }} shrink>
                     קטגוריה
                   </InputLabel>
@@ -372,6 +329,11 @@ const AddRecipe = () => {
                     label="קטגוריה"
                     sx={{ direction: "rtl" }}
                     defaultValue={1}
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <Utensils size={18} color="#FF9A9E" />
+                      </InputAdornment>
+                    }
                   >
                     {Array.isArray(categories) && categories.length > 0
                       ? categories.map((category) => (
@@ -402,244 +364,349 @@ const AddRecipe = () => {
                       {errors.CategoryId.message as string}
                     </Typography>
                   )}
-                </StyledFormControl>
-              </Grid>
-
-              <Grid item xs={12}>
-                <StyledTextField
-                  label="תיאור המתכון"
+                </AddRecipeStyles.StyledFormControl>
+              </motion.div>
+            </Grid>
+          </Grid>
+        </motion.div>
+      ),
+    },
+    {
+      label: "פרטים נוספים",
+      icon: <ImageIcon size={20} />,
+      content: (
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <motion.div variants={itemVariants}>
+                <AddRecipeStyles.StyledTextField
+                  label="זמן הכנה (דקות)"
+                  type="number"
                   fullWidth
-                  multiline
-                  rows={2}
                   size="small"
-                  {...register("Description", { required: "תיאור המתכון הוא שדה חובה" })}
-                  error={!!errors.Description}
-                  helperText={errors.Description?.message as string}
+                  {...register("Duration", {
+                    required: "זמן הכנה הוא שדה חובה",
+                    min: { value: 1, message: "זמן הכנה חייב להיות לפחות דקה אחת" },
+                  })}
+                  error={!!errors.Duration}
+                  helperText={errors.Duration?.message as string}
                   InputProps={{
                     sx: { direction: "rtl" },
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Clock size={18} color="#FF9A9E" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: <InputAdornment position="end">דקות</InputAdornment>,
                   }}
                   InputLabelProps={{
                     sx: { right: 14, left: "auto", transformOrigin: "right top" },
                     shrink: true,
                   }}
                 />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography variant="subtitle1" fontWeight="bold" color="#333">
-                    מרכיבים:
-                  </Typography>
-                  <Button
-                    type="button"
-                    onClick={() => appendIngredient({ Name: "", Count: 1, Type: "" })}
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    size="small"
-                    sx={{
-                      borderColor: "#D19A9A",
-                      color: "#D19A9A",
-                      "&:hover": {
-                        borderColor: "#C48B8B",
-                        backgroundColor: "rgba(209, 154, 154, 0.1)",
-                      },
-                    }}
-                  >
-                    הוסף מרכיב
-                  </Button>
-                </Box>
-
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    backgroundColor: "rgba(0,0,0,0.02)",
-                    mb: 2,
-                    maxHeight: "200px",
-                    overflowY: "auto",
-                  }}
-                >
-                  {ingridents.map((ingredient, index) => (
-                    <Box
-                      key={ingredient.id}
-                      sx={{
-                        display: "flex",
-                        gap: 1,
-                        mb: index < ingridents.length - 1 ? 1.5 : 0,
-                        alignItems: "center",
-                        flexDirection: { xs: "column", sm: "row" },
-                      }}
-                    >
-                      <StyledTextField
-                        placeholder="שם המרכיב"
-                        size="small"
-                        {...register(`Ingridents.${index}.Name` as const, { required: "שם המרכיב הוא שדה חובה" })}
-                        error={!!errors.Ingridents?.[index]?.Name}
-                        helperText={errors.Ingridents?.[index]?.Name?.message as string}
-                        fullWidth
-                        InputProps={{ sx: { direction: "rtl" } }}
-                        InputLabelProps={{ shrink: true }}
-                      />
-
-                      <StyledTextField
-                        type="number"
-                        placeholder="כמות"
-                        size="small"
-                        {...register(`Ingridents.${index}.Count` as const, {
-                          required: "כמות היא שדה חובה",
-                          min: { value: 0.1, message: "כמות חייבת להיות חיובית" },
-                        })}
-                        error={!!errors.Ingridents?.[index]?.Count}
-                        helperText={errors.Ingridents?.[index]?.Count?.message as string}
-                        sx={{ width: { xs: "100%", sm: "25%" } }}
-                        InputProps={{ sx: { direction: "rtl" } }}
-                        InputLabelProps={{ shrink: true }}
-                      />
-
-                      <StyledTextField
-                        placeholder="יחידת מידה"
-                        size="small"
-                        {...register(`Ingridents.${index}.Type` as const, { required: "יחידת מידה היא שדה חובה" })}
-                        error={!!errors.Ingridents?.[index]?.Type}
-                        helperText={errors.Ingridents?.[index]?.Type?.message as string}
-                        sx={{ width: { xs: "100%", sm: "25%" } }}
-                        InputProps={{ sx: { direction: "rtl" } }}
-                        InputLabelProps={{ shrink: true }}
-                      />
-
-                      <IconButton onClick={() => removeIngredient(index)} color="error" sx={{ mt: { xs: 1, sm: 0 } }}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  ))}
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12}>
-                <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Typography variant="subtitle1" fontWeight="bold" color="#333">
-                    הוראות הכנה:
-                  </Typography>
-                  <Button
-                    type="button"
-                    onClick={() => appendInstruction({ Name: "" })}
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    size="small"
-                    sx={{
-                      borderColor: "#D19A9A",
-                      color: "#D19A9A",
-                      "&:hover": {
-                        borderColor: "#C48B8B",
-                        backgroundColor: "rgba(209, 154, 154, 0.1)",
-                      },
-                    }}
-                  >
-                    הוסף הוראת הכנה
-                  </Button>
-                </Box>
-
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    backgroundColor: "rgba(0,0,0,0.02)",
-                    mb: 2,
-                    maxHeight: "200px",
-                    overflowY: "auto",
-                  }}
-                >
-                  {instructions.map((instruction, index) => (
-                    <Box
-                      key={instruction.id}
-                      sx={{
-                        display: "flex",
-                        gap: 1,
-                        mb: index < instructions.length - 1 ? 1.5 : 0,
-                        alignItems: "center",
-                      }}
-                    >
-                      <Typography sx={{ minWidth: 24, fontWeight: "bold" }}>{index + 1}.</Typography>
-
-                      <StyledTextField
-                        placeholder="הוראת הכנה"
-                        size="small"
-                        {...register(`Instructions.${index}.Name` as const, { required: "הוראת הכנה היא שדה חובה" })}
-                        error={!!errors.Instructions?.[index]?.Name}
-                        helperText={errors.Instructions?.[index]?.Name?.message as string}
-                        fullWidth
-                        InputProps={{ sx: { direction: "rtl" } }}
-                        InputLabelProps={{ shrink: true }}
-                      />
-
-                      <IconButton onClick={() => removeInstruction(index)} color="error">
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  ))}
-                </Paper>
-              </Grid>
-
-              <Grid item xs={12} sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
-                <Box>
-                  <Button
-                    type="button"
-                    variant="outlined"
-                    onClick={() => navigate(-1)}
-                    startIcon={<ArrowBackIcon />}
-                    size="small"
-                    sx={{
-                      color: "#666",
-                      borderColor: "#ccc",
-                      mr: 1,
-                      "&:hover": {
-                        borderColor: "#999",
-                        backgroundColor: "rgba(0, 0, 0, 0.05)",
-                      },
-                    }}
-                  >
-                    חזור
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outlined"
-                    onClick={() => navigate("/RecipeList")}
-                    size="small"
-                    sx={{
-                      color: "#666",
-                      borderColor: "#ccc",
-                      "&:hover": {
-                        borderColor: "#999",
-                        backgroundColor: "rgba(0, 0, 0, 0.05)",
-                      },
-                    }}
-                  >
-                    ביטול
-                  </Button>
-                </Box>
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={loading || !!nameError}
-                  size="small"
-                  sx={{
-                    backgroundColor: "#D19A9A",
-                    color: "white",
-                    "&:hover": {
-                      backgroundColor: "#C48B8B",
-                    },
-                  }}
-                >
-                  {loading ? <CircularProgress size={20} color="inherit" /> : "שמור מתכון"}
-                </Button>
-              </Grid>
+              </motion.div>
             </Grid>
-          </form>
-        </CardContent>
-      </Card>
+
+            <Grid item xs={12} sm={6}>
+              <motion.div variants={itemVariants}>
+                <AddRecipeStyles.StyledFormControl fullWidth error={!!errors.Difficulty} size="small">
+                  <InputLabel
+                    id="difficulty-label"
+                    sx={{ right: 14, left: "auto", transformOrigin: "right top" }}
+                    shrink
+                  >
+                    רמת קושי
+                  </InputLabel>
+                  <Select
+                    labelId="difficulty-label"
+                    {...register("Difficulty", { required: "רמת קושי היא שדה חובה" })}
+                    label="רמת קושי"
+                    sx={{ direction: "rtl" }}
+                    defaultValue={1}
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <ChefHat size={18} color="#FF9A9E" />
+                      </InputAdornment>
+                    }
+                  >
+                    <MenuItem value={1}>קלה</MenuItem>
+                    <MenuItem value={2}>בינונית</MenuItem>
+                    <MenuItem value={3}>קשה</MenuItem>
+                  </Select>
+                  {errors.Difficulty && (
+                    <Typography variant="caption" color="error">
+                      {errors.Difficulty.message as string}
+                    </Typography>
+                  )}
+                </AddRecipeStyles.StyledFormControl>
+              </motion.div>
+            </Grid>
+
+            <Grid item xs={12}>
+              <motion.div variants={itemVariants}>
+                <AddRecipeStyles.StyledTextField
+                  label="כתובת תמונה (URL)"
+                  fullWidth
+                  size="small"
+                  {...register("Img")}
+                  placeholder="https://example.com/image.jpg"
+                  InputProps={{
+                    sx: { direction: "rtl" },
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <ImageIcon size={18} color="#FF9A9E" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  InputLabelProps={{
+                    sx: { right: 14, left: "auto", transformOrigin: "right top" },
+                    shrink: true,
+                  }}
+                />
+              </motion.div>
+            </Grid>
+          </Grid>
+        </motion.div>
+      ),
+    },
+    {
+      label: "מרכיבים",
+      icon: <Utensils size={20} />,
+      content: (
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="subtitle1" fontWeight="bold" color="#333">
+              מרכיבים:
+            </Typography>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                type="button"
+                onClick={() => appendIngredient({ Name: "", Count: 1, Type: "" })}
+                variant="outlined"
+                startIcon={<Plus size={16} />}
+                size="small"
+                sx={AddRecipeStyles.addButton}
+              >
+                הוסף מרכיב
+              </Button>
+            </motion.div>
+          </Box>
+
+          <Paper elevation={0} sx={AddRecipeStyles.ingredientsPaper}>
+            <AnimatePresence>
+              {ingridents.map((ingredient, index) => (
+                <motion.div
+                  key={ingredient.id}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Box sx={AddRecipeStyles.ingredientItem(index, ingridents.length)}>
+                    <AddRecipeStyles.StyledTextField
+                      placeholder="שם המרכיב"
+                      size="small"
+                      {...register(`Ingridents.${index}.Name` as const, { required: "שם המרכיב הוא שדה חובה" })}
+                      error={!!errors.Ingridents?.[index]?.Name}
+                      helperText={errors.Ingridents?.[index]?.Name?.message as string}
+                      fullWidth
+                      InputProps={{ sx: { direction: "rtl" } }}
+                      InputLabelProps={{ shrink: true }}
+                    />
+
+                    <AddRecipeStyles.StyledTextField
+                      type="number"
+                      placeholder="כמות"
+                      size="small"
+                      {...register(`Ingridents.${index}.Count` as const, {
+                        required: "כמות היא שדה חובה",
+                        min: { value: 0.1, message: "כמות חייבת להיות חיובית" },
+                      })}
+                      error={!!errors.Ingridents?.[index]?.Count}
+                      helperText={errors.Ingridents?.[index]?.Count?.message as string}
+                      sx={{ width: { xs: "100%", sm: "25%" } }}
+                      InputProps={{ sx: { direction: "rtl" } }}
+                      InputLabelProps={{ shrink: true }}
+                    />
+
+                    <AddRecipeStyles.StyledTextField
+                      placeholder="יחידת מידה"
+                      size="small"
+                      {...register(`Ingridents.${index}.Type` as const, { required: "יחידת מידה היא שדה חובה" })}
+                      error={!!errors.Ingridents?.[index]?.Type}
+                      helperText={errors.Ingridents?.[index]?.Type?.message as string}
+                      sx={{ width: { xs: "100%", sm: "25%" } }}
+                      InputProps={{ sx: { direction: "rtl" } }}
+                      InputLabelProps={{ shrink: true }}
+                    />
+
+                    <IconButton onClick={() => removeIngredient(index)} color="error" sx={{ mt: { xs: 1, sm: 0 } }}>
+                      <Trash2 size={18} />
+                    </IconButton>
+                  </Box>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </Paper>
+        </motion.div>
+      ),
+    },
+    {
+      label: "הוראות הכנה",
+      icon: <ListOrdered size={20} />,
+      content: (
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Typography variant="subtitle1" fontWeight="bold" color="#333">
+              הוראות הכנה:
+            </Typography>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                type="button"
+                onClick={() => appendInstruction({ Name: "" })}
+                variant="outlined"
+                startIcon={<Plus size={16} />}
+                size="small"
+                sx={AddRecipeStyles.addButton}
+              >
+                הוסף הוראת הכנה
+              </Button>
+            </motion.div>
+          </Box>
+
+          <Paper elevation={0} sx={AddRecipeStyles.instructionsPaper}>
+            <AnimatePresence>
+              {instructions.map((instruction, index) => (
+                <motion.div
+                  key={instruction.id}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Box sx={AddRecipeStyles.instructionItem}>
+                    <Typography sx={{ minWidth: 24, fontWeight: "bold", color: "#FF9A9E" }}>{index + 1}.</Typography>
+
+                    <AddRecipeStyles.StyledTextField
+                      placeholder="הוראת הכנה"
+                      size="small"
+                      {...register(`Instructions.${index}.Name` as const, { required: "הוראת הכנה היא שדה חובה" })}
+                      error={!!errors.Instructions?.[index]?.Name}
+                      helperText={errors.Instructions?.[index]?.Name?.message as string}
+                      fullWidth
+                      InputProps={{ sx: { direction: "rtl" } }}
+                      InputLabelProps={{ shrink: true }}
+                    />
+
+                    <IconButton onClick={() => removeInstruction(index)} color="error">
+                      <Trash2 size={18} />
+                    </IconButton>
+                  </Box>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </Paper>
+        </motion.div>
+      ),
+    },
+  ]
+
+  return (
+    <Box sx={{ py: 4 }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <Card sx={AddRecipeStyles.card}>
+          {/* Animated decorative elements */}
+          <Box
+            component={motion.div}
+            animate={{
+              rotate: [0, 10, -10, 0],
+              scale: [1, 1.05, 0.95, 1],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Number.POSITIVE_INFINITY,
+              repeatType: "loop",
+            }}
+            sx={AddRecipeStyles.decorativeElement1}
+          />
+          <Box
+            component={motion.div}
+            animate={{
+              rotate: [0, -10, 10, 0],
+              scale: [1, 0.95, 1.05, 1],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Number.POSITIVE_INFINITY,
+              repeatType: "loop",
+              delay: 0.5,
+            }}
+            sx={AddRecipeStyles.decorativeElement2}
+          />
+
+          <CardContent sx={AddRecipeStyles.cardContent}>
+            <Typography variant="h5" gutterBottom sx={AddRecipeStyles.cardTitle}>
+              הוספת מתכון חדש
+            </Typography>
+
+            <Stepper activeStep={activeStep} orientation="vertical" sx={{ mb: 3 }}>
+              {steps.map((step, index) => (
+                <Step key={step.label}>
+                  <StepLabel
+                    StepIconProps={{
+                      icon: step.icon,
+                    }}
+                    sx={AddRecipeStyles.stepLabel(activeStep, index)}
+                  >
+                    {step.label}
+                  </StepLabel>
+                  <StepContent>
+                    {step.content}
+                    <Box sx={{ mb: 2, mt: 2 }}>
+                      <div>
+                        <Button
+                          variant="contained"
+                          onClick={index === steps.length - 1 ? handleSubmit(onSubmit) : handleNext}
+                          sx={AddRecipeStyles.primaryButton}
+                          startIcon={index === steps.length - 1 ? <Save size={18} /> : <ArrowLeft size={18} />}
+                          disabled={loading || !!nameError}
+                        >
+                          {index === steps.length - 1 ? (
+                            loading ? (
+                              <CircularProgress size={20} color="inherit" />
+                            ) : (
+                              "שמור מתכון"
+                            )
+                          ) : (
+                            "הבא"
+                          )}
+                        </Button>
+                        <Button
+                          disabled={index === 0}
+                          onClick={handleBack}
+                          sx={{ mr: 1 }}
+                          startIcon={<ArrowRight size={18} />}
+                        >
+                          חזרה
+                        </Button>
+                        <Button
+                          onClick={() => navigate("/RecipeList")}
+                          startIcon={<X size={18} />}
+                          sx={{
+                            color: "#666",
+                          }}
+                        >
+                          ביטול
+                        </Button>
+                      </div>
+                    </Box>
+                  </StepContent>
+                </Step>
+              ))}
+            </Stepper>
+          </CardContent>
+        </Card>
+      </motion.div>
       <ErrorSnackbar error={error} open={openSnackbar} onClose={() => setOpenSnackbar(false)} />
     </Box>
   )

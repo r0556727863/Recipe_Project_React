@@ -34,7 +34,7 @@ interface RecipeForm {
   Name: string
   Img: string
   Duration: number
-  Difficulty: number|string
+  Difficulty: number | string
   Description: string
   Ingridents: {
     Name: string
@@ -365,9 +365,39 @@ const EditRecipe = () => {
           borderRadius: 2,
           boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
           overflow: "visible",
+          background: "linear-gradient(to bottom, #fff, #f9f2f2)",
+          position: "relative",
         }}
       >
-        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+        {/* Add decorative elements */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: -15,
+            right: -15,
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #D19A9A 0%, #E3B5B5 100%)",
+            opacity: 0.2,
+            zIndex: 0,
+          }}
+        />
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: -20,
+            left: -20,
+            width: 100,
+            height: 100,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #D19A9A 0%, #E3B5B5 100%)",
+            opacity: 0.2,
+            zIndex: 0,
+          }}
+        />
+
+        <CardContent sx={{ p: { xs: 2, sm: 3 }, position: "relative", zIndex: 1 }}>
           <Typography
             variant="h5"
             gutterBottom

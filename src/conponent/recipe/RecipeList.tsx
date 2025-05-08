@@ -325,6 +325,21 @@ const RecipeList = observer(() => {
                                   sx={{ height: 24 }}
                                 />
                               </Box>
+                              <Box
+                              sx={{
+                                position: "absolute",
+                                bottom: 0,
+                                right: 0,
+                                backgroundColor: "#D19A9A",
+                                color: "white",
+                                fontSize: "0.7rem",
+                                padding: "2px 6px",
+                                borderTopLeftRadius: 8,
+                                fontWeight: "bold",
+                              }}
+                            >
+                              לחץ לפרטים
+                            </Box>
                             </Box>
                           </ListItemButton>
                         </CardContent>
@@ -456,4 +471,3 @@ const RecipeList = observer(() => {
 })
 
 export default RecipeList
-

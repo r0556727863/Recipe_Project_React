@@ -10,14 +10,14 @@ import {
   InputAdornment,
   IconButton,
   FormHelperText,
+  Link,
+  Grid,
 } from "@mui/material"
 import axios from "axios"
 import { UserContext } from "./context/UserContext"
 import ErrorSnackbar from "./Error"
-import VisibilityIcon from "@mui/icons-material/Visibility"
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff"
-import CheckCircleIcon from "@mui/icons-material/CheckCircle"
-import ErrorIcon from "@mui/icons-material/Error"
+import { Eye, EyeOff, User, Mail, Phone, Lock, CreditCard, UserCircle, CheckCircle, AlertCircle } from "lucide-react"
+import { RegistrationStyles } from "../styles/registration.styles"
 
 export const Register = () => {
   const context = useContext(UserContext)
@@ -54,17 +54,17 @@ export const Register = () => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
 
-    // Clear error when user types
+    // ניקוי שגיאה כאשר המשתמש מקליד
     setErrors({ ...errors, [name]: "" })
 
-    // Check password strength when password field changes
+    // בדיקת חוזק סיסמה כאשר שדה הסיסמה משתנה
     if (name === "password") {
       checkPasswordStrength(value)
     }
   }
 
   const checkPasswordStrength = (password: string) => {
-    // Simple password strength checker
+    // בודק חוזק סיסמה פשוט
     let strength = 0
     let feedback = ""
 
@@ -133,36 +133,10 @@ export const Register = () => {
     } else if (!/^\d{9}$/.test(formData.tz)) {
       newErrors.tz = "תעודת זהות חייבת להכיל 9 ספרות"
       isValid = false
-    } 
+    }
 
     setErrors(newErrors)
     return isValid
-  }
-
-  // פונקציה לבדיקת תקינות ת"ז ישראלית
-  const validateIsraeliID = (id: string) => {
-    // Convert to number array
-    const idArray = id.split("").map(Number)
-
-    // Check if all characters are digits
-    if (idArray.some(isNaN)) return false
-
-    // Calculate checksum
-    let sum = 0
-    for (let i = 0; i < 9; i++) {
-      let digit = idArray[i]
-      // Multiply odd positions by 1, even positions by 2
-      if (i % 2 === 0) {
-        digit *= 1
-      } else {
-        digit *= 2
-        if (digit > 9) digit -= 9
-      }
-      sum += digit
-    }
-
-    // Valid ID if sum is divisible by 10
-    return sum % 10 === 0
   }
 
   const handleSave = async () => {
@@ -181,15 +155,16 @@ export const Register = () => {
 
       dispatch({ type: "CREATE_USER", payload: res.data })
       alert("ההרשמה הושלמה בהצלחה!")
+    
       setFormData({ username: "", name: "", email: "", phone: "", password: "", tz: "" })
       setOpen(false)
     } catch (error: any) {
       console.error("Registration error:", error)
 
-      // Handle specific server errors
+      // טיפול בשגיאות ספציפיות מהשרת
       if (error.response) {
         if (error.response.status === 400) {
-          // Check if server returned specific field errors
+          // בדיקה אם השרת החזיר שגיאות שדה ספציפיות
           if (error.response.data && typeof error.response.data === "string") {
             if (error.response.data.includes("UserName")) {
               setErrors({ ...errors, username: "שם משתמש כבר קיים במערכת" })
@@ -197,6 +172,8 @@ export const Register = () => {
               setErrors({ ...errors, email: "כתובת אימייל כבר קיימת במערכת" })
             } else if (error.response.data.includes("Tz")) {
               setErrors({ ...errors, tz: "תעודת זהות כבר קיימת במערכת" })
+            } else if (error.response.data.includes("phone")) {
+              setErrors({ ...errors, phone: "מספר הטלפון כבר קיימת במערכת" })
             } else {
               setError(error.response.data || "שגיאה בהרשמה, אנא נסה שנית")
               setOpenSnackbar(true)
@@ -223,230 +200,309 @@ export const Register = () => {
       <Button
         onClick={() => setOpen(true)}
         variant="contained"
-        sx={{
-          bgcolor: "rgba(255, 255, 255, 0.2)",
-          color: "white",
-          "&:hover": {
-            bgcolor: "rgba(255, 255, 255, 0.3)",
-          },
-        }}
+        aria-label="open-register"
+        sx={RegistrationStyles.registerButton}
       >
         הרשמה
       </Button>
 
-      <Modal open={open} onClose={() => setOpen(false)} aria-labelledby="registration-modal-title">
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            padding: 3,
-            width: 400,
-            maxWidth: "90%",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            backgroundColor: "white",
-            borderRadius: 2,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-          }}
+      {open && (
+        <Modal
+          open={open}
+          onClose={() => setOpen(false)}
+          aria-labelledby="registration-modal-title"
+          closeAfterTransition
         >
-          <Typography
-            id="registration-modal-title"
-            variant="h5"
-            component="h2"
-            sx={{
-              mb: 3,
-              textAlign: "center",
-              color: "#D19A9A",
-              fontWeight: "bold",
-            }}
-          >
-            הרשמה לאתר
-          </Typography>
+          <Box sx={RegistrationStyles.modalContainer}>
+            <div onClick={() => setOpen(false)} style={RegistrationStyles.modalBackdrop} />
 
-          <TextField
-            label="שם משתמש"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            fullWidth
-            sx={{ marginBottom: 2 }}
-            error={!!errors.username}
-            helperText={errors.username}
-            InputProps={{
-              sx: { direction: "ltr" },
-              endAdornment: formData.username ? (
-                <InputAdornment position="end">
-                  {errors.username ? <ErrorIcon color="error" /> : <CheckCircleIcon color="success" />}
-                </InputAdornment>
-              ) : null,
-            }}
-          />
+            <div style={RegistrationStyles.modalContent}>
+              <Box onClick={(e) => e.stopPropagation()} sx={RegistrationStyles.modalBox}>
+                {/* אלמנטים דקורטיביים */}
+                <Box sx={RegistrationStyles.decorativeElement1} />
+                <Box sx={RegistrationStyles.decorativeElement2} />
 
-          <TextField
-            label="שם מלא"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            fullWidth
-            sx={{ marginBottom: 2 }}
-            error={!!errors.name}
-            helperText={errors.name}
-            InputProps={{
-              sx: { direction: "ltr" },
-              endAdornment: formData.name ? (
-                <InputAdornment position="end">
-                  {errors.name ? <ErrorIcon color="error" /> : <CheckCircleIcon color="success" />}
-                </InputAdornment>
-              ) : null,
-            }}
-          />
-
-          <TextField
-            label="אימייל"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            type="email"
-            fullWidth
-            sx={{ marginBottom: 2 }}
-            error={!!errors.email}
-            helperText={errors.email}
-            InputProps={{
-              sx: { direction: "ltr" },
-              endAdornment: formData.email ? (
-                <InputAdornment position="end">
-                  {errors.email ? <ErrorIcon color="error" /> : <CheckCircleIcon color="success" />}
-                </InputAdornment>
-              ) : null,
-            }}
-          />
-
-          <TextField
-            label="טלפון"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            fullWidth
-            sx={{ marginBottom: 2 }}
-            error={!!errors.phone}
-            helperText={errors.phone}
-            InputProps={{
-              sx: { direction: "ltr" },
-              endAdornment: formData.phone ? (
-                <InputAdornment position="end">
-                  {errors.phone ? <ErrorIcon color="error" /> : <CheckCircleIcon color="success" />}
-                </InputAdornment>
-              ) : null,
-            }}
-          />
-
-          <TextField
-            label="סיסמה"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            type={showPassword ? "text" : "password"}
-            fullWidth
-            sx={{ marginBottom: 1 }}
-            error={!!errors.password}
-            helperText={errors.password}
-            InputProps={{
-              sx: { direction: "ltr" },
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
+                <Box sx={RegistrationStyles.formContainer}>
+                  <Typography
+                    id="registration-modal-title"
+                    variant="h5"
+                    component="h2"
+                    sx={RegistrationStyles.formTitle}
                   >
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+                    הרשמה לאתר
+                  </Typography>
 
-          {formData.password && (
-            <Box sx={{ mb: 2, mt: 0.5 }}>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
-                <Box
-                  sx={{
-                    height: 4,
-                    flexGrow: 1,
-                    borderRadius: 2,
-                    bgcolor: "grey.300",
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: `${(passwordStrength / 5) * 100}%`,
-                      bgcolor:
-                        passwordStrength <= 2 ? "error.main" : passwordStrength <= 4 ? "warning.main" : "success.main",
-                      transition: "width 0.3s",
-                    }}
-                  />
+                  <Grid container spacing={2} direction="column">
+                    <Grid item xs={12}>
+                      <div style={RegistrationStyles.formField}>
+                        <TextField
+                          label="שם משתמש"
+                          name="username"
+                          value={formData.username}
+                          onChange={handleChange}
+                          fullWidth
+                          sx={RegistrationStyles.textField}
+                          error={!!errors.username}
+                          helperText={errors.username}
+                          InputProps={{
+                            sx: { direction: "ltr" },
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <User size={18} color="#FF9A9E" />
+                              </InputAdornment>
+                            ),
+                            endAdornment: formData.username ? (
+                              <InputAdornment position="end">
+                                {errors.username ? (
+                                  <AlertCircle size={18} color="#f44336" />
+                                ) : (
+                                  <CheckCircle size={18} color="#4caf50" />
+                                )}
+                              </InputAdornment>
+                            ) : null,
+                          }}
+                        />
+                      </div>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <div style={RegistrationStyles.formField}>
+                        <TextField
+                          label="שם מלא"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          fullWidth
+                          sx={RegistrationStyles.textField}
+                          error={!!errors.name}
+                          helperText={errors.name}
+                          InputProps={{
+                            sx: { direction: "ltr" },
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <UserCircle size={18} color="#FF9A9E" />
+                              </InputAdornment>
+                            ),
+                            endAdornment: formData.name ? (
+                              <InputAdornment position="end">
+                                {errors.name ? (
+                                  <AlertCircle size={18} color="#f44336" />
+                                ) : (
+                                  <CheckCircle size={18} color="#4caf50" />
+                                )}
+                              </InputAdornment>
+                            ) : null,
+                          }}
+                        />
+                      </div>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <div style={RegistrationStyles.formField}>
+                        <TextField
+                          label="אימייל"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          type="email"
+                          fullWidth
+                          sx={RegistrationStyles.textField}
+                          error={!!errors.email}
+                          helperText={errors.email}
+                          InputProps={{
+                            sx: { direction: "ltr" },
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Mail size={18} color="#FF9A9E" />
+                              </InputAdornment>
+                            ),
+                            endAdornment: formData.email ? (
+                              <InputAdornment position="end">
+                                {errors.email ? (
+                                  <AlertCircle size={18} color="#f44336" />
+                                ) : (
+                                  <CheckCircle size={18} color="#4caf50" />
+                                )}
+                              </InputAdornment>
+                            ) : null,
+                          }}
+                        />
+                      </div>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <div style={RegistrationStyles.formField}>
+                        <TextField
+                          label="טלפון"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          fullWidth
+                          sx={RegistrationStyles.textField}
+                          error={!!errors.phone}
+                          helperText={errors.phone}
+                          InputProps={{
+                            sx: { direction: "ltr" },
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Phone size={18} color="#FF9A9E" />
+                              </InputAdornment>
+                            ),
+                            endAdornment: formData.phone ? (
+                              <InputAdornment position="end">
+                                {errors.phone ? (
+                                  <AlertCircle size={18} color="#f44336" />
+                                ) : (
+                                  <CheckCircle size={18} color="#4caf50" />
+                                )}
+                              </InputAdornment>
+                            ) : null,
+                          }}
+                        />
+                      </div>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <div style={RegistrationStyles.formField}>
+                        <TextField
+                          label="סיסמה"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          type={showPassword ? "text" : "password"}
+                          fullWidth
+                          sx={RegistrationStyles.textField}
+                          error={!!errors.password}
+                          helperText={errors.password}
+                          InputProps={{
+                            sx: { direction: "ltr" },
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Lock size={18} color="#FF9A9E" />
+                              </InputAdornment>
+                            ),
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  aria-label="toggle password visibility"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  edge="end"
+                                >
+                                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
+                      </div>
+                    </Grid>
+
+                    {formData.password && (
+                      <Grid item xs={12}>
+                        <div style={RegistrationStyles.formField}>
+                          <Box sx={{ mb: 2, mt: 0.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+                              <Box sx={RegistrationStyles.passwordStrengthBar}>
+                                <Box sx={RegistrationStyles.passwordStrengthIndicator(passwordStrength)} />
+                              </Box>
+                            </Box>
+                            <FormHelperText
+                              sx={{
+                                color:
+                                  getPasswordColor() === "error"
+                                    ? "#f44336"
+                                    : getPasswordColor() === "warning"
+                                      ? "#ff9800"
+                                      : "#4caf50",
+                              }}
+                            >
+                              {passwordFeedback}
+                            </FormHelperText>
+                          </Box>
+                        </div>
+                      </Grid>
+                    )}
+
+                    <Grid item xs={12}>
+                      <div style={RegistrationStyles.formField}>
+                        <TextField
+                          label="תעודת זהות"
+                          name="tz"
+                          value={formData.tz}
+                          onChange={handleChange}
+                          fullWidth
+                          sx={RegistrationStyles.textField}
+                          error={!!errors.tz}
+                          helperText={errors.tz}
+                          InputProps={{
+                            sx: { direction: "ltr" },
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <CreditCard size={18} color="#FF9A9E" />
+                              </InputAdornment>
+                            ),
+                            endAdornment: formData.tz ? (
+                              <InputAdornment position="end">
+                                {errors.tz ? (
+                                  <AlertCircle size={18} color="#f44336" />
+                                ) : (
+                                  <CheckCircle size={18} color="#4caf50" />
+                                )}
+                              </InputAdornment>
+                            ) : null,
+                          }}
+                        />
+                      </div>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <div style={RegistrationStyles.formField}>
+                        <Button
+                          onClick={handleSave}
+                          disabled={loading}
+                          variant="contained"
+                          fullWidth
+                          sx={RegistrationStyles.submitButton}
+                        >
+                          {loading ? <CircularProgress size={24} color="inherit" /> : "הרשם"}
+                        </Button>
+                      </div>
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <div style={RegistrationStyles.formField}>
+                        <Box sx={{ mt: 1, textAlign: "center" }}>
+                          <Typography variant="body2">
+                            כבר יש לך חשבון?{" "}
+                            <Link
+                              href="#"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                setOpen(false)
+                                // מציאת כפתור ההתחברות ולחיצה עליו
+                                const loginButtons = document.querySelectorAll("button")
+                                for (const btn of loginButtons) {
+                                  if (btn.textContent === "התחברות") {
+                                    btn.click()
+                                    break
+                                  }
+                                }
+                              }}
+                              sx={RegistrationStyles.loginLink}
+                            >
+                              התחבר עכשיו
+                            </Link>
+                          </Typography>
+                        </Box>
+                      </div>
+                    </Grid>
+                  </Grid>
                 </Box>
               </Box>
-              <FormHelperText
-                sx={{
-                  color:
-                    getPasswordColor() === "error"
-                      ? "error.main"
-                      : getPasswordColor() === "warning"
-                        ? "warning.main"
-                        : "success.main",
-                }}
-              >
-                {passwordFeedback}
-              </FormHelperText>
-            </Box>
-          )}
-
-          <TextField
-            label="תעודת זהות"
-            name="tz"
-            value={formData.tz}
-            onChange={handleChange}
-            fullWidth
-            sx={{ marginBottom: 3 }}
-            error={!!errors.tz}
-            helperText={errors.tz}
-            InputProps={{
-              sx: { direction: "ltr" },
-              endAdornment: formData.tz ? (
-                <InputAdornment position="end">
-                  {errors.tz ? <ErrorIcon color="error" /> : <CheckCircleIcon color="success" />}
-                </InputAdornment>
-              ) : null,
-            }}
-          />
-
-          <Button
-            onClick={handleSave}
-            disabled={loading}
-            variant="contained"
-            fullWidth
-            sx={{
-              backgroundColor: "#D19A9A",
-              color: "white",
-              padding: 1.5,
-              "&:hover": {
-                backgroundColor: "#C48B8B",
-              },
-            }}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "הרשם"}
-          </Button>
-        </Box>
-      </Modal>
+            </div>
+          </Box>
+        </Modal>
+      )}
 
       <ErrorSnackbar error={error} open={openSnackbar} onClose={() => setOpenSnackbar(false)} />
     </>

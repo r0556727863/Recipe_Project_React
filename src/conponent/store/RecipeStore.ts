@@ -123,14 +123,10 @@ class RecipeStore {
       console.log("Editing recipe before API call:", recipe)
 
       // Make a deep copy of the recipe to avoid reference issues
-    //   const recipeCopy = JSON.parse(JSON.stringify(recipe))
-    const cleanRecipe = toJS(recipe)
+      const cleanRecipe = toJS(recipe)
 
       // Log the data being sent to the server
-    //   console.log("Sending to server:", recipeCopy)
-    const res = await axios.post(`http://localhost:8080/api/recipe/edit`, cleanRecipe)
-
-    //   const res = await axios.post(`http://localhost:8080/api/recipe/edit`, recipeCopy)
+      const res = await axios.post(`http://localhost:8080/api/recipe/edit`, cleanRecipe)
       const updatedRecipe = res.data
 
       console.log("Server response:", updatedRecipe)
@@ -139,7 +135,6 @@ class RecipeStore {
         const index = this.recipes.findIndex((r) => r.Id === recipe.Id)
         if (index !== -1) {
           this.recipes = [...this.recipes.slice(0, index), updatedRecipe, ...this.recipes.slice(index + 1)]
-       
         }
 
         // Update selected recipe if it's the one being edited
@@ -149,9 +144,9 @@ class RecipeStore {
       })
 
       // Refresh recipes from server to ensure we have the latest data
-      await this.getRecipe(); // ודא שאתה מחכה לסיום הפונקציה
-      console.log("Recipes after fetching from server:", this.recipes);
-      console.log("Server response++++++:", updatedRecipe);
+      await this.getRecipe() // ודא שאתה מחכה לסיום הפונקציה
+      console.log("Recipes after fetching from server:", this.recipes)
+      console.log("Server response++++++:", updatedRecipe)
       return updatedRecipe
     } catch (error: any) {
       console.error("Error editing recipe:", error)

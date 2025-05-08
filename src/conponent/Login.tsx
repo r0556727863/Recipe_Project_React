@@ -1,11 +1,12 @@
 import type React from "react"
 import { useContext, useState } from "react"
-import { TextField, Button, Modal, Box, CircularProgress, Typography, InputAdornment, IconButton } from "@mui/material"
+import {TextField,Button,Modal,Box,CircularProgress,Typography,InputAdornment,IconButton,Link,
+} from "@mui/material"
 import axios from "axios"
 import { UserContext } from "./context/UserContext"
 import ErrorSnackbar from "./Error"
-import VisibilityIcon from "@mui/icons-material/Visibility"
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff"
+import { Eye, EyeOff, User, Lock } from "lucide-react"
+import { LoginStyles } from "../styles/login.styles"
 
 export const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
   const context = useContext(UserContext)
@@ -74,116 +75,128 @@ export const Login = ({ onLoginSuccess }: { onLoginSuccess: () => void }) => {
 
   return (
     <>
-      <Button
-        onClick={() => setOpen(true)}
-        variant="contained"
-        sx={{
-          bgcolor: "rgba(255, 255, 255, 0.2)",
-          color: "white",
-          "&:hover": {
-            bgcolor: "rgba(255, 255, 255, 0.3)",
-          },
-        }}
-      >
+      <Button onClick={() => setOpen(true)} variant="contained" sx={LoginStyles.loginButton}>
         התחברות
       </Button>
 
-      <Modal open={open} onClose={() => setOpen(false)} aria-labelledby="login-modal-title">
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            padding: 3,
-            width: 400,
-            maxWidth: "90%",
-            backgroundColor: "white",
-            borderRadius: 2,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-          }}
-        >
-          <Typography
-            id="login-modal-title"
-            variant="h5"
-            component="h2"
-            sx={{
-              mb: 3,
-              textAlign: "center",
-              color: "#D19A9A",
-              fontWeight: "bold",
-            }}
-          >
-            התחברות לאתר
-          </Typography>
+      {open && (
+        <Modal open={open} onClose={() => setOpen(false)} aria-labelledby="login-modal-title" closeAfterTransition>
+          <Box sx={LoginStyles.modalContainer}>
+            <div onClick={() => setOpen(false)} style={LoginStyles.modalBackdrop} />
 
-          <TextField
-            label="שם משתמש"
-            value={UserName}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setUserName(event.target.value)
-              setUsernameError(null)
-            }}
-            fullWidth
-            margin="normal"
-            error={!!usernameError}
-            helperText={usernameError}
-            InputProps={{ sx: { direction: "ltr" } }}
-          />
+            <div style={LoginStyles.modalContent}>
+              <Box onClick={(e) => e.stopPropagation()} sx={LoginStyles.modalBox}>
+                {/* Decorative elements */}
+                <Box sx={LoginStyles.decorativeElement1} />
+                <Box sx={LoginStyles.decorativeElement2} />
 
-          <TextField
-            label="סיסמה"
-            value={Password}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              setPassword(event.target.value)
-              setPasswordError(null)
-            }}
-            type={showPassword ? "text" : "password"}
-            fullWidth
-            margin="normal"
-            error={!!passwordError}
-            helperText={passwordError}
-            InputProps={{
-              sx: { direction: "ltr" },
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+                <Box sx={LoginStyles.formContainer}>
+                  <Typography id="login-modal-title" variant="h5" component="h2" sx={LoginStyles.formTitle}>
+                    התחברות לאתר
+                  </Typography>
 
-          {error && (
-            <Typography color="error" variant="body2" sx={{ marginBottom: 1, textAlign: "center" }}>
-              {error}
-            </Typography>
-          )}
+                  <div style={LoginStyles.formField}>
+                    <TextField
+                      label="שם משתמש"
+                      value={UserName}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setUserName(event.target.value)
+                        setUsernameError(null)
+                      }}
+                      fullWidth
+                      margin="normal"
+                      error={!!usernameError}
+                      helperText={usernameError}
+                      InputProps={{
+                        sx: { direction: "ltr" },
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <User size={18} color="#FF9A9E" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={LoginStyles.textField}
+                    />
+                  </div>
 
-          <Button
-            onClick={handleLogin}
-            disabled={loading}
-            variant="contained"
-            fullWidth
-            sx={{
-              backgroundColor: "#D19A9A",
-              color: "white",
-              padding: 1.5,
-              mt: 2,
-              "&:hover": {
-                backgroundColor: "#C48B8B",
-              },
-            }}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "התחבר"}
-          </Button>
-        </Box>
-      </Modal>
+                  <div style={LoginStyles.formField}>
+                    <TextField
+                      label="סיסמה"
+                      value={Password}
+                      onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setPassword(event.target.value)
+                        setPasswordError(null)
+                      }}
+                      type={showPassword ? "text" : "password"}
+                      fullWidth
+                      margin="normal"
+                      error={!!passwordError}
+                      helperText={passwordError}
+                      InputProps={{
+                        sx: { direction: "ltr" },
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Lock size={18} color="#FF9A9E" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label="toggle password visibility"
+                              onClick={() => setShowPassword(!showPassword)}
+                              edge="end"
+                            >
+                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={LoginStyles.textField}
+                    />
+                  </div>
+
+                  {error && (
+                    <Typography color="error" variant="body2" sx={{ marginBottom: 1, textAlign: "center" }}>
+                      {error}
+                    </Typography>
+                  )}
+
+                  <div style={LoginStyles.submitButtonContainer}>
+                    <Button
+                      onClick={handleLogin}
+                      disabled={loading}
+                      variant="contained"
+                      fullWidth
+                      sx={LoginStyles.submitButton}
+                    >
+                      {loading ? <CircularProgress size={24} color="inherit" /> : "התחבר"}
+                    </Button>
+                  </div>
+
+                  <div style={LoginStyles.formField}>
+                    <Box sx={{ mt: 2, textAlign: "center" }}>
+                      <Typography variant="body2">
+                        עדיין אין לך חשבון?{" "}
+                        <Link
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            setOpen(false)
+                            document.querySelector<HTMLButtonElement>('[aria-label="open-register"]')?.click()
+                          }}
+                          sx={LoginStyles.registerLink}
+                        >
+                          הירשם עכשיו
+                        </Link>
+                      </Typography>
+                    </Box>
+                  </div>
+                </Box>
+              </Box>
+            </div>
+          </Box>
+        </Modal>
+      )}
 
       <ErrorSnackbar error={error} open={openSnackbar} onClose={() => setOpenSnackbar(false)} />
     </>
